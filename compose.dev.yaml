@@ -1,0 +1,50 @@
+services:
+  nats:
+    image: nats:2.10-alpine
+    container_name: nats
+    ports:
+      - "${NATS_PORT}:4222" # NATS client port
+      - "${NATS_HTTP_PORT}:8222" # HTTP management port
+      - "${NATS_CLUSTER_PORT}:6222" # Clustering port
+    command:
+      - "--http_port=${NATS_HTTP_PORT}"
+      - "--jetstream"
+    volumes:
+      - nats_data:/data
+      - nats_config:/etc/nats
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${NATS_HTTP_PORT}/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # TODO: check nui services
+  # nui:
+  #   image: ghcr.io/nats-nui/nui:latest
+  #   container_name: nui
+  #   ports:
+  #     - "31311:31311"
+  #   networks:
+  #     - public
+  #   volumes:
+  #     - nats_data:/db
+  #     - /<nats-credentials-path>:/nats-creds:ro
+  #   restart: unless-stopped
+
+volumes:
+  nats_data:
+    name: nats_data
+  nats_config:
+    name: nats_config
+
+networks:
+  # public:
+  #   name: public-network # Custom name for public network
+  #   driver: bridge # Default bridge network, accessible from outside
+  internal:
+    name: private-network # Custom name for internal network
+    driver: bridge
+    internal: true # This makes the network internal only
