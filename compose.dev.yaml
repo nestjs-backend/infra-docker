@@ -34,6 +34,31 @@ services:
   #     - /<nats-credentials-path>:/nats-creds:ro
   #   restart: unless-stopped
 
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    networks:
+      - internal
+      - public # enable only for development
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo mongo:27017/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    logging:
+      driver: "local"
+      options:
+        max-size: "10m"
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 1G
+
 volumes:
   nats_data:
     name: nats_data
@@ -41,9 +66,9 @@ volumes:
     name: nats_config
 
 networks:
-  # public:
-  #   name: public-network # Custom name for public network
-  #   driver: bridge # Default bridge network, accessible from outside
+  public:
+    name: public-network # Custom name for public network
+    driver: bridge # Default bridge network, accessible from outside
   internal:
     name: private-network # Custom name for internal network
     driver: bridge
